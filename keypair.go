@@ -17,9 +17,9 @@ import (
 type KeypairType byte
 
 const (
-	KeypairTypeInvalid byte = 0x0
-	KeypairTypeEd25519      = 0x1
-	KeypairTypeDH25519      = 0x2
+	KeypairTypeInvalid KeypairType = 0x0
+	KeypairTypeEd25519             = 0x1
+	KeypairTypeDH25519             = 0x2
 )
 
 func GenerateDH25519() (Keypair, error) {
