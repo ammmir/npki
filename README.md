@@ -6,7 +6,6 @@ Status: Pre-Alpha
 
 # TODO
 
-* document certificate and key formats
 * port to Swift
 * command-line tool for working with keys and certs
 
