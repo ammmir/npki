@@ -5,8 +5,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"errors"
-	"fmt"
-	"os"
 
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/curve25519"
@@ -78,17 +76,11 @@ func DecodeKeypair(data []byte, key []byte, isKDF bool) (Keypair, error) {
 	flagN := data[1]&0x20 == 0x20
 
 	if flagE {
-		fmt.Fprintln(os.Stderr, "E")
 		size += 16 + chacha20poly1305.NonceSize
 	}
 
 	if flagS {
-		fmt.Fprintln(os.Stderr, "S")
 		size += 32 // scrypt salt
-	}
-
-	if flagN {
-		fmt.Fprintln(os.Stderr, "N")
 	}
 
 	kp.privkey = make([]byte, size)
@@ -97,9 +89,6 @@ func DecodeKeypair(data []byte, key []byte, isKDF bool) (Keypair, error) {
 	// verify checksum
 	digest := sha256.Sum256(data[:2+size])
 	if !bytes.Equal(data[2+size:2+size+4], digest[:4]) {
-		fmt.Fprintf(os.Stderr, "data: %v\n", data[:2+size+4])
-		fmt.Fprintf(os.Stderr, "calculated digest: %v\n", digest)
-		fmt.Fprintf(os.Stderr, "actual digest: %v\n", data[2+size:2+size+4])
 		return Keypair{}, ErrInvalidChecksum
 	}
 
@@ -117,7 +106,6 @@ func DecodeKeypair(data []byte, key []byte, isKDF bool) (Keypair, error) {
 			}
 
 			salt := data[2 : 2+32]
-			fmt.Fprintf(os.Stderr, "SALT: %v\n", salt)
 
 			if key, err = scrypt.Key(key, salt, 16384, 8, 1, 32); err != nil {
 				return Keypair{}, err
@@ -129,10 +117,6 @@ func DecodeKeypair(data []byte, key []byte, isKDF bool) (Keypair, error) {
 			nonce = data[2 : 2+chacha20poly1305.NonceSize]
 			ciphertext = data[2+chacha20poly1305.NonceSize : 2+size]
 		}
-
-		fmt.Fprintf(os.Stderr, "nonce: %v\n", nonce)
-		fmt.Fprintf(os.Stderr, "ciphertext: %v\n", ciphertext)
-		fmt.Fprintf(os.Stderr, "key: %v\n", key)
 
 		chacha, err := chacha20poly1305.New(key)
 		if err != nil {
@@ -158,9 +142,6 @@ func DecodeKeypair(data []byte, key []byte, isKDF bool) (Keypair, error) {
 			copy(kp.pubkey, DH25519PublicKey(kp.privkey))
 		}
 	}
-
-	fmt.Fprintf(os.Stderr, "PRIV KEY NOW: %v\n", kp.privkey)
-	fmt.Fprintf(os.Stderr, "PUB KEY NOW: %v\n", kp.pubkey)
 
 	return kp, nil
 }
@@ -255,34 +236,20 @@ func (t *Keypair) Encode(key []byte, kdf bool) ([]byte, error) {
 
 		ciphertext := chacha.Seal(nil, nonce, t.privkey, nil)
 
-		fmt.Fprintf(os.Stderr, "priv key   length: %d\n", len(t.privkey))
-		fmt.Fprintf(os.Stderr, "ciphertext length: %d\n", len(ciphertext))
-
 		if len(salt) > 0 {
-			fmt.Fprintf(os.Stderr, "SALT: %v\n", salt)
 			buf.Write(salt)
 		}
 
 		buf.Write(nonce)
-		fmt.Fprintf(os.Stderr, "nonce: %v\n", nonce)
-
 		buf.Write(ciphertext)
-
-		fmt.Fprintf(os.Stderr, "ct: %v\n", ciphertext)
 	} else if len(t.privkey) > 0 {
 		buf.Write(t.privkey)
 	} else {
 		buf.Write(t.pubkey)
 	}
 
-	fmt.Fprintf(os.Stderr, "priv key: %v\n", t.privkey)
-	fmt.Fprintf(os.Stderr, " pub key: %v\n", t.pubkey)
-
 	digest := sha256.Sum256(buf.Bytes())
-	fmt.Fprintf(os.Stderr, "data: %v\n", buf.Bytes())
-	fmt.Fprintf(os.Stderr, "actual digest: %v\n", digest)
 	buf.Write(digest[:4]) // Checksum
-	fmt.Fprintf(os.Stderr, "checksum: %v\n", digest[:4])
 
 	return buf.Bytes(), nil
 }
