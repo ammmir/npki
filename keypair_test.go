@@ -24,6 +24,15 @@ func TestEd25519(t *testing.T) {
 		t.Errorf("byte 1: %v", buf[1])
 	}
 
+	recon, err := DecodeKeypair(buf, []byte("secret"), true)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !bytes.Equal(recon.PrivateKey(), kp.PrivateKey()) {
+		t.Errorf("encoded/decoded private key does not match:\ndecoded: %v\nencoded: %v\n", recon.PrivateKey(), kp.PrivateKey())
+	}
+
 	if !bytes.Equal(Ed25519PublicKey(kp.PrivateKey()), kp.PublicKey()) {
 		t.Error("derive public key from private key")
 	}

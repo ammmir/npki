@@ -71,6 +71,9 @@ func DecodeKeypair(data []byte, key []byte, isKDF bool) (Keypair, error) {
 		return Keypair{}, ErrInvalidKeyFormat
 	}
 
+	kp.privkey = make([]byte, size)
+	kp.pubkey = make([]byte, 32)
+
 	flagE := data[1]&0x80 == 0x80
 	flagS := data[1]&0x40 == 0x40
 	flagN := data[1]&0x20 == 0x20
@@ -82,9 +85,6 @@ func DecodeKeypair(data []byte, key []byte, isKDF bool) (Keypair, error) {
 	if flagS {
 		size += 32 // scrypt salt
 	}
-
-	kp.privkey = make([]byte, size)
-	kp.pubkey = make([]byte, 32)
 
 	// verify checksum
 	digest := sha256.Sum256(data[:2+size])
